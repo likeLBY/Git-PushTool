@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="/qt/qml/Git/">
+    <file alias="Main.qml">D:/下载l/Git-PushTool-main/Main.qml</file>
+    <file alias="FilePanel.qml">D:/下载l/Git-PushTool-main/FilePanel.qml</file>
+    <file alias="FileItem.qml">D:/下载l/Git-PushTool-main/FileItem.qml</file>
+    <file alias="ActionButton.qml">D:/下载l/Git-PushTool-main/ActionButton.qml</file>
+    <file alias="IconButton.qml">D:/下载l/Git-PushTool-main/IconButton.qml</file>
+    <file alias="Toast.qml">D:/下载l/Git-PushTool-main/Toast.qml</file>
+    <file alias="MacTitleBar.qml">D:/下载l/Git-PushTool-main/MacTitleBar.qml</file>
+  </qresource>
+</RCC>
+

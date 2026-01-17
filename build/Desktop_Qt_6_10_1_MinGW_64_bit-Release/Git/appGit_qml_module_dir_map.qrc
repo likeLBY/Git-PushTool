@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="/qt/qml/Git">D:/XiangMu/C++/Git/build/Desktop_Qt_6_10_1_MinGW_64_bit-Release/Git</file>
+
+  </qresource>
+</RCC>

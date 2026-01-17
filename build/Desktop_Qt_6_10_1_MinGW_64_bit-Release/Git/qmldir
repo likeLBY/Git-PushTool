@@ -1,0 +1,12 @@
+module Git
+typeinfo appGit.qmltypes
+prefer :/qt/qml/Git/
+Main 254.0 Main.qml
+FilePanel 254.0 FilePanel.qml
+FileItem 254.0 FileItem.qml
+ActionButton 254.0 ActionButton.qml
+IconButton 254.0 IconButton.qml
+Toast 254.0 Toast.qml
+MacTitleBar 254.0 MacTitleBar.qml
+depends QtQuick
+

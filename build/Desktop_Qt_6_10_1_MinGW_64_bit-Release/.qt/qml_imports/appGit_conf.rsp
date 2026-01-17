@@ -1,0 +1,15 @@
+-rootPath
+D:/下载l/Git-PushTool-main
+-cmake-output
+-output-file
+D:/XiangMu/C++/Git/build/Desktop_Qt_6_10_1_MinGW_64_bit-Release/.qt/qml_imports/appGit_conf.cmake
+-importPath
+D:/XiangMu/C++/Git/build/Desktop_Qt_6_10_1_MinGW_64_bit-Release/Git
+-importPath
+D:/XiangMu/C++/Git/build/Desktop_Qt_6_10_1_MinGW_64_bit-Release
+-importPath
+D:/Dowloads/QTC++/6.10.1/mingw_64/qml
+-qrcFiles
+D:/XiangMu/C++/Git/build/Desktop_Qt_6_10_1_MinGW_64_bit-Release/.qt/rcc/qmake_Git.qrc
+D:/XiangMu/C++/Git/build/Desktop_Qt_6_10_1_MinGW_64_bit-Release/.qt/rcc/appGit_raw_qml_0.qrc
+D:/XiangMu/C++/Git/build/Desktop_Qt_6_10_1_MinGW_64_bit-Release/.qt/rcc/appGit_raw_res_0.qrc

@@ -1,0 +1,13 @@
+<RCC>
+  <qresource prefix="/qt/qml/Git/">
+    <file alias="images/icon.ico">D:/下载l/Git-PushTool-main/images/icon.ico</file>
+    <file alias="images/wallpaper.png">D:/下载l/Git-PushTool-main/images/wallpaper.png</file>
+    <file alias="images/wallpaper-dark.png">D:/下载l/Git-PushTool-main/images/wallpaper-dark.png</file>
+    <file alias="images/git.png">D:/下载l/Git-PushTool-main/images/git.png</file>
+    <file alias="images/github.png">D:/下载l/Git-PushTool-main/images/github.png</file>
+    <file alias="images/github.com-favicon.ico">D:/下载l/Git-PushTool-main/images/github.com-favicon.ico</file>
+    <file alias="images/gitee.com-favicon.ico">D:/下载l/Git-PushTool-main/images/gitee.com-favicon.ico</file>
+    <file alias="fonts/fontawesome/Font Awesome 6 Free-Solid-900.otf">D:/下载l/Git-PushTool-main/fonts/fontawesome/Font Awesome 6 Free-Solid-900.otf</file>
+  </qresource>
+</RCC>
+
