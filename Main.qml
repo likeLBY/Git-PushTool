@@ -1490,144 +1490,292 @@ ApplicationWindow {
             onCloseClicked: gitignoreDialog.close()
         }
 
-        property var rules: []
+        property var gitignoreFiles: []
+        property int selectedFileIndex: -1
+        property string editingContent: ""  // 正在编辑的内容
 
         onOpened: {
-            rules = gitManager.getGitignoreRules()
+            gitignoreFiles = gitManager.getAllGitignoreFiles()
+            selectedFileIndex = gitignoreFiles.length > 0 ? 0 : -1
+            loadFileContent()
         }
 
-        contentItem: ColumnLayout {
-            spacing: 12
+        onSelectedFileIndexChanged: {
+            loadFileContent()
+        }
 
-            // Info message
+        function loadFileContent() {
+            if (selectedFileIndex >= 0 && selectedFileIndex < gitignoreFiles.length) {
+                var file = gitignoreFiles[selectedFileIndex]
+                var rules = gitManager.getGitignoreRulesFromFile(file.path)
+                editingContent = rules.join('\n')
+            } else {
+                editingContent = ""
+            }
+        }
+
+        function saveCurrentFile() {
+            if (selectedFileIndex < 0 || selectedFileIndex >= gitignoreFiles.length) return
+            
+            var file = gitignoreFiles[selectedFileIndex]
+            // 调用保存函数
+            gitManager.saveGitignoreFile(file.path, editingContent)
+            // 刷新文件列表
+            gitignoreFiles = gitManager.getAllGitignoreFiles()
+        }
+
+        contentItem: RowLayout {
+            spacing: 0
+
+            // 左侧：.gitignore 文件列表
             Rectangle {
-                Layout.fillWidth: true
-                height: 40
+                Layout.preferredWidth: 200
+                Layout.fillHeight: true
+                color: "#ffffff"
                 radius: 8
-                color: "#eff6ff"
-                border.color: "#3b82f6"
-                border.width: 1
-
-                RowLayout {
+                
+                ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 10
+                    anchors.margins: 8
                     spacing: 8
 
                     Text {
-                        text: "\uf05a"
-                        font.family: fontAwesome.name
-                        font.pixelSize: 14
-                        color: "#3b82f6"
+                        text: ".gitignore 文件"
+                        font.pixelSize: 12
+                        font.bold: true
+                        color: "#6b7280"
+                        Layout.leftMargin: 4
                     }
 
-                    Text {
-                        text: "点击规则可以将其从 .gitignore 中移除"
-                        font.pixelSize: 11
-                        color: "#1e40af"
+                    ListView {
+                        id: filesList
                         Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        spacing: 4
+                        clip: true
+                        model: gitignoreDialog.gitignoreFiles
+
+                        ScrollBar.vertical: ScrollBar {
+                            policy: ScrollBar.AlwaysOff  // 隐藏滚动条
+                            width: 6
+                        }
+
+                        delegate: Rectangle {
+                            width: ListView.view.width - 8
+                            height: 60
+                            radius: 6
+                            color: gitignoreDialog.selectedFileIndex === index ? "#eff6ff" : (fileHover.hovered ? "#f9fafb" : "transparent")
+                            border.color: gitignoreDialog.selectedFileIndex === index ? "#3b82f6" : "transparent"
+                            border.width: 1
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 8
+                                spacing: 2
+
+                                Text {
+                                    text: modelData.directory
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    color: "#374151"
+                                    elide: Text.ElideMiddle
+                                    Layout.fillWidth: true
+                                }
+
+                                Text {
+                                    text: modelData.ruleCount + " 条规则"
+                                    font.pixelSize: 10
+                                    color: "#9ca3af"
+                                }
+
+                                Text {
+                                    text: modelData.path
+                                    font.pixelSize: 9
+                                    font.family: "Consolas, Monaco, monospace"
+                                    color: "#d1d5db"
+                                    elide: Text.ElideMiddle
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            HoverHandler {
+                                id: fileHover
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            TapHandler {
+                                onTapped: gitignoreDialog.selectedFileIndex = index
+                            }
+                        }
+
+                        // Empty state
+                        Text {
+                            anchors.centerIn: parent
+                            visible: filesList.count === 0
+                            text: "未找到 .gitignore"
+                            font.pixelSize: 12
+                            color: "#9ca3af"
+                        }
                     }
                 }
             }
 
-            // Rules list
+            // 分隔线
+            Rectangle {
+                Layout.preferredWidth: 1
+                Layout.fillHeight: true
+                color: "#e5e7eb"
+            }
+
+            // 右侧：文本编辑器
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: 8
-                color: "#ffffff"
-                clip: true
-
-                ListView {
-                    id: gitignoreList
+                color: "#F8FBFE"
+                
+                ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 4
-                    spacing: 4
-                    model: gitignoreDialog.rules
+                    anchors.margins: 12
+                    spacing: 12
 
-                    ScrollBar.vertical: ScrollBar {
-                        policy: ScrollBar.AsNeeded
-                    }
-
-                    delegate: Rectangle {
-                        width: ListView.view.width - 8
+                    // 顶部工具栏
+                    Rectangle {
+                        Layout.fillWidth: true
                         height: 40
-                        radius: 6
-                        color: ruleHover.hovered ? "#fef2f2" : "#f9fafb"
-                        border.color: ruleHover.hovered ? "#fecaca" : "transparent"
+                        radius: 8
+                        color: "#eff6ff"
+                        border.color: "#3b82f6"
                         border.width: 1
+                        visible: gitignoreDialog.selectedFileIndex >= 0
 
                         RowLayout {
                             anchors.fill: parent
                             anchors.margins: 10
-                            spacing: 10
+                            spacing: 8
 
                             Text {
-                                text: "\uf070"
+                                text: "\uf044"
                                 font.family: fontAwesome.name
-                                font.pixelSize: 12
-                                color: "#9ca3af"
+                                font.pixelSize: 14
+                                color: "#3b82f6"
                             }
 
                             Text {
-                                text: modelData
-                                font.pixelSize: 13
-                                font.family: "Consolas, Monaco, monospace"
-                                color: "#374151"
-                                elide: Text.ElideMiddle
+                                text: "直接编辑 .gitignore 文件内容"
+                                font.pixelSize: 11
+                                color: "#1e40af"
                                 Layout.fillWidth: true
                             }
 
-                            Text {
-                                visible: ruleHover.hovered
-                                text: "\uf1f8"
-                                font.family: fontAwesome.name
+                            // 保存按钮
+                            Rectangle {
+                                width: 70
+                                height: 26
+                                radius: 6
+                                color: saveHover.hovered ? "#2563eb" : "#3b82f6"
+                                
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 4
+
+                                    Text {
+                                        text: "\uf0c7"
+                                        font.family: fontAwesome.name
+                                        font.pixelSize: 11
+                                        color: "#ffffff"
+                                    }
+
+                                    Text {
+                                        text: "保存"
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        color: "#ffffff"
+                                    }
+                                }
+
+                                HoverHandler {
+                                    id: saveHover
+                                    cursorShape: Qt.PointingHandCursor
+                                }
+
+                                TapHandler {
+                                    onTapped: gitignoreDialog.saveCurrentFile()
+                                }
+                            }
+                        }
+                    }
+
+                    // 文本编辑器
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: 8
+                        color: "#ffffff"
+                        border.color: "#e5e7eb"
+                        border.width: 1
+                        clip: true
+
+                        ScrollView {
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            
+                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
+                            TextArea {
+                                id: gitignoreEditor
+                                text: gitignoreDialog.editingContent
+                                font.family: "Consolas, Monaco, monospace"
                                 font.pixelSize: 12
-                                color: "#ef4444"
+                                color: "#374151"
+                                wrapMode: TextArea.NoWrap
+                                selectByMouse: true
+                                selectByKeyboard: true
+                                
+                                background: Rectangle {
+                                    color: "transparent"
+                                }
+
+                                onTextChanged: {
+                                    gitignoreDialog.editingContent = text
+                                }
+
+                                placeholderText: "在此输入 .gitignore 规则...\n\n示例：\n*.log\nnode_modules/\n.DS_Store"
+                                placeholderTextColor: "#9ca3af"
                             }
                         }
 
-                        HoverHandler {
-                            id: ruleHover
-                            cursorShape: Qt.PointingHandCursor
+                        // No file selected state
+                        Text {
+                            anchors.centerIn: parent
+                            visible: gitignoreDialog.selectedFileIndex < 0
+                            text: "← 选择一个 .gitignore 文件"
+                            font.pixelSize: 13
+                            color: "#9ca3af"
                         }
+                    }
 
-                        TapHandler {
-                            onTapped: {
-                                gitManager.removeFromGitignore(modelData)
-                                gitignoreDialog.rules = gitManager.getGitignoreRules()
+                    // 底部按钮
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+
+                        Item { Layout.fillWidth: true }
+
+                        Text {
+                            text: "关闭"
+                            font.pixelSize: 13
+                            color: closeGitignoreArea.containsMouse ? "#3b82f6" : "#6b7280"
+                            
+                            MouseArea {
+                                id: closeGitignoreArea
+                                anchors.fill: parent
+                                anchors.margins: -8
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: gitignoreDialog.close()
                             }
                         }
-                    }
-
-                    // Empty state
-                    Text {
-                        anchors.centerIn: parent
-                        visible: gitignoreList.count === 0
-                        text: ".gitignore 为空"
-                        font.pixelSize: 14
-                        color: "#9ca3af"
-                    }
-                }
-            }
-
-            // Close button
-            RowLayout {
-                Layout.fillWidth: true
-
-                Item { Layout.fillWidth: true }
-
-                Text {
-                    text: "关闭"
-                    font.pixelSize: 13
-                    color: closeGitignoreArea.containsMouse ? "#3b82f6" : "#6b7280"
-                    
-                    MouseArea {
-                        id: closeGitignoreArea
-                        anchors.fill: parent
-                        anchors.margins: -8
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: gitignoreDialog.close()
                     }
                 }
             }
@@ -4268,6 +4416,100 @@ ApplicationWindow {
                         ToolTip.visible: hovered
                         ToolTip.delay: 500
                         ToolTip.text: "将本地提交推送到远程仓库"
+                    }
+                }
+            }
+        }
+        
+        // 底部栏 - 温馨提示和一言
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 32
+            color: isDarkMode ? "#252525" : "#ffffff"
+            border.color: isDarkMode ? "#3a3a3a" : "#e5e7eb"
+            border.width: 1
+            z: 100
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                spacing: 16
+
+                // 温馨提示
+                Row {
+                    spacing: 8
+
+                    Text {
+                        text: "\uf06a"
+                        font.family: fontAwesome.name
+                        font.pixelSize: 10
+                        color: "#f59e0b"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: "温馨提示："
+                        font.pixelSize: 10
+                        font.bold: true
+                        color: isDarkMode ? "#fbbf24" : "#d97706"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: "任何操作后请点击刷新以获取最新状态"
+                        font.pixelSize: 10
+                        color: isDarkMode ? "#a0a0a0" : "#666666"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: "｜"
+                        font.pixelSize: 10
+                        color: isDarkMode ? "#505050" : "#d1d5db"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: "提交前请查看 .gitignore 规则文件"
+                        font.pixelSize: 10
+                        color: isDarkMode ? "#a0a0a0" : "#666666"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                // 一言
+                Row {
+                    spacing: 6
+
+                    Text {
+                        text: hitokotoText
+                        font.pixelSize: 10
+                        color: isDarkMode ? "#909090" : "#888888"
+                        elide: Text.ElideRight
+                        width: Math.min(implicitWidth, 300)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        visible: hitokotoFrom !== "" || hitokotoAuthor !== ""
+                        text: {
+                            if (hitokotoAuthor && hitokotoFrom) {
+                                return "—— " + hitokotoAuthor + "「" + hitokotoFrom + "」"
+                            } else if (hitokotoFrom) {
+                                return "——「" + hitokotoFrom + "」"
+                            } else if (hitokotoAuthor) {
+                                return "—— " + hitokotoAuthor
+                            }
+                            return ""
+                        }
+                        font.pixelSize: 9
+                        color: isDarkMode ? "#707070" : "#999999"
+                        anchors.verticalCenter: parent.verticalCenter
                     }
                 }
             }

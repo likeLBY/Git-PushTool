@@ -13,6 +13,7 @@
 #include <QFutureWatcher>
 #include <QDesktopServices>
 #include <QUrl>
+#include <algorithm>
 
 GitManager::GitManager(QObject *parent)
     : QObject(parent)
@@ -2003,6 +2004,130 @@ void GitManager::removeFromGitignore(const QString &pattern)
     
     refresh();
     emit operationSuccess("已从 .gitignore 移除: " + pattern);
+}
+
+QVariantList GitManager::getAllGitignoreFiles()
+{
+    QVariantList result;
+    if (m_repoPath.isEmpty()) return result;
+    
+    // 递归查找所有 .gitignore 文件
+    QDirIterator it(m_repoPath, QStringList() << ".gitignore", QDir::Files, QDirIterator::Subdirectories);
+    
+    while (it.hasNext()) {
+        QString filePath = it.next();
+        QString relativePath = QDir(m_repoPath).relativeFilePath(filePath);
+        
+        // 跳过 .git 目录中的文件
+        if (relativePath.startsWith(".git/") || relativePath.startsWith(".git\\")) {
+            continue;
+        }
+        
+        // 读取文件内容获取规则数量
+        QFile file(filePath);
+        int ruleCount = 0;
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QString content = QString::fromUtf8(file.readAll());
+            file.close();
+            
+            QStringList lines = content.split('\n');
+            for (const QString &line : lines) {
+                QString trimmed = line.trimmed();
+                if (!trimmed.isEmpty() && !trimmed.startsWith('#')) {
+                    ruleCount++;
+                }
+            }
+        }
+        
+        // 获取所在目录
+        QString directory = relativePath;
+        if (directory == ".gitignore") {
+            directory = "根目录";
+        } else {
+            directory = QFileInfo(relativePath).path();
+        }
+        
+        QVariantMap fileInfo;
+        fileInfo["path"] = relativePath;
+        fileInfo["fullPath"] = filePath;
+        fileInfo["directory"] = directory;
+        fileInfo["ruleCount"] = ruleCount;
+        
+        result.append(fileInfo);
+    }
+    
+    // 按路径排序（根目录优先）
+    std::sort(result.begin(), result.end(), [](const QVariant &a, const QVariant &b) {
+        QString pathA = a.toMap()["path"].toString();
+        QString pathB = b.toMap()["path"].toString();
+        
+        // 根目录的 .gitignore 排在最前面
+        if (pathA == ".gitignore") return true;
+        if (pathB == ".gitignore") return false;
+        
+        return pathA < pathB;
+    });
+    
+    return result;
+}
+
+QStringList GitManager::getGitignoreRulesFromFile(const QString &filePath)
+{
+    QStringList rules;
+    if (m_repoPath.isEmpty()) return rules;
+    
+    // 构建完整路径
+    QString fullPath;
+    if (QFileInfo(filePath).isAbsolute()) {
+        fullPath = filePath;
+    } else {
+        fullPath = m_repoPath + "/" + filePath;
+    }
+    
+    QFile file(fullPath);
+    if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QString content = QString::fromUtf8(file.readAll());
+        file.close();
+        
+        QStringList lines = content.split('\n');
+        for (const QString &line : lines) {
+            QString trimmed = line.trimmed();
+            // 包含注释和空行，保持原始格式
+            rules.append(line);
+        }
+    }
+    
+    return rules;
+}
+
+void GitManager::saveGitignoreFile(const QString &filePath, const QString &content)
+{
+    if (m_repoPath.isEmpty()) {
+        setError("仓库路径为空");
+        return;
+    }
+    
+    // 构建完整路径
+    QString fullPath;
+    if (QFileInfo(filePath).isAbsolute()) {
+        fullPath = filePath;
+    } else {
+        fullPath = m_repoPath + "/" + filePath;
+    }
+    
+    QFile file(fullPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        setError("无法写入文件: " + fullPath);
+        return;
+    }
+    
+    QTextStream stream(&file);
+    stream.setEncoding(QStringConverter::Utf8);
+    stream << content;
+    file.close();
+    
+    refresh();
+    emit operationSuccess("已保存 " + filePath);
 }
 
 void GitManager::abortMerge()

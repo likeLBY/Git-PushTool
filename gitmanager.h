@@ -76,6 +76,9 @@ public:
     Q_INVOKABLE void deleteNewFile(const QString &filePath);
     Q_INVOKABLE void addToGitignore(const QString &pattern);
     Q_INVOKABLE QStringList getGitignoreRules();
+    Q_INVOKABLE QVariantList getAllGitignoreFiles();  // 新增：获取所有 .gitignore 文件
+    Q_INVOKABLE QStringList getGitignoreRulesFromFile(const QString &filePath);  // 新增：读取指定文件的规则
+    Q_INVOKABLE void saveGitignoreFile(const QString &filePath, const QString &content);  // 新增：保存文件
     Q_INVOKABLE void removeFromGitignore(const QString &pattern);
     Q_INVOKABLE void abortMerge();
     Q_INVOKABLE void resetToBranch(const QString &branchName);
